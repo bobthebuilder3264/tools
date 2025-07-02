@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tool Return Form</title>
+  <style>
+    body { font-family: sans-serif; margin: 0; padding: 1em; background: #f9f9f9; }
+    .form-container { max-width: 600px; margin: auto; background: white; padding: 1em; border-radius: 10px; box-shadow: 0 0 10px #ccc; }
+    .input-group { margin-bottom: 1em; }
+    label { display: block; font-weight: bold; margin-bottom: 0.5em; }
+    input, textarea { width: 100%; padding: 0.5em; font-size: 1em; }
+    canvas { border: 1px solid #ccc; width: 100%; height: 150px; touch-action: none; }
+    button { padding: 0.75em 1em; font-size: 1em; margin-right: 1em; }
+  </style>
+</head>
+<body>
+  <div class="form-container">
+    <h2>Tool Return Form</h2>
+    <div class="input-group">
+      <label for="empId">Employee ID</label>
+      <input type="text" id="empId" required />
+    </div>
+    <div class="input-group">
+      <label for="desc">Tool Issue Description</label>
+      <textarea id="desc" rows="4"></textarea>
+    </div>
+    <div class="input-group">
+      <label>Signature</label>
+      <canvas id="signature"></canvas>
+      <button onclick="clearSignature()">Clear Signature</button>
+    </div>
+    <div class="input-group">
+      <label for="photo">Upload Photo</label>
+      <input type="file" id="photo" accept="image/*" />
+    </div>
+    <div class="input-group">
+      <label for="video">Upload Video</label>
+      <input type="file" id="video" accept="video/*" />
+    </div>
+    <button onclick="shareFiles()">Share</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("signature");
+    const ctx = canvas.getContext("2d");
+    let drawing = false;
+
+    canvas.addEventListener("pointerdown", e => {
+      drawing = true;
+      ctx.beginPath();
+      ctx.moveTo(e.offsetX, e.offsetY);
+    });
+    canvas.addEventListener("pointermove", e => {
+      if (!drawing) return;
+      ctx.lineTo(e.offsetX, e.offsetY);
+      ctx.stroke();
+    });
+    canvas.addEventListener("pointerup", () => drawing = false);
+
+    function clearSignature() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    async function shareFiles() {
+      const empId = document.getElementById("empId").value.trim();
+      const desc = document.getElementById("desc").value.trim();
+      if (!empId || !desc) return alert("Please fill out all fields.");
+
+      // Generate form image
+      const formCanvas = document.createElement("canvas");
+      formCanvas.width = 600;
+      formCanvas.height = 800;
+      const formCtx = formCanvas.getContext("2d");
+      formCtx.fillStyle = "white";
+      formCtx.fillRect(0, 0, formCanvas.width, formCanvas.height);
+      formCtx.fillStyle = "black";
+      formCtx.font = "20px sans-serif";
+      formCtx.fillText("Employee ID: " + empId, 20, 40);
+      formCtx.fillText("Description:", 20, 80);
+      formCtx.font = "16px sans-serif";
+      formCtx.fillText(desc, 20, 110);
+      formCtx.drawImage(canvas, 20, 150);
+
+      const formBlob = await new Promise(res => formCanvas.toBlob(res, "image/png"));
+      const date = new Date().toISOString().slice(0,10);
+      const files = [
+        new File([formBlob], `ToolForm_${empId}_${date}.png`, { type: "image/png" })
+      ];
+
+      const photo = document.getElementById("photo").files[0];
+      const video = document.getElementById("video").files[0];
+      if (photo) files.push(new File([photo], `Photo_${empId}_${date}${photo.name.slice(-4)}`));
+      if (video) files.push(new File([video], `Video_${empId}_${date}${video.name.slice(-4)}`));
+
+      if (!navigator.canShare || !navigator.canShare({ files })) {
+        alert("Your device/browser does not support sharing these files.");
+        return;
+      }
+
+      try {
+        await navigator.share({
+          files,
+          title: `Tool Return - ${empId}`,
+          text: `Form and media submitted on ${date}`
+        });
+      } catch (err) {
+        alert("Sharing canceled or failed.");
+        console.error(err);
+      }
+    }
+  </script>
+</body>
+</html>
