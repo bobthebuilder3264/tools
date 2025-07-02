@@ -28,6 +28,14 @@
       border: 1px solid #ccc;
       background: white;
     }
+    .media-upload {
+      width: 1012px;
+      margin: auto;
+      background: #fff;
+      padding: 1em;
+      box-shadow: 0 0 10px #ccc;
+      text-align: center;
+    }
     #shareBtn { display: block; margin: 20px auto; padding: 10px 20px; font-size: 16px; }
   </style>
 </head>
@@ -46,9 +54,16 @@
     <canvas class="signature-pad" id="supervisorSig" width="300" height="60" style="top: 620px; left: 550px;"></canvas>
   </div>
 
-  <button id="shareBtn">Export Form & Share</button>
+  <div class="media-upload">
+    <label for="photo">Upload Photo: </label>
+    <input type="file" id="photo" accept="image/*"><br><br>
+    <label for="video">Upload Video: </label>
+    <input type="file" id="video" accept="video/*"><br><br>
+    <button id="shareBtn">Export Form & Share</button>
+  </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script>
     const canvas1 = document.getElementById('employeeSig');
     const canvas2 = document.getElementById('supervisorSig');
@@ -90,14 +105,12 @@
         input.remove();
       });
 
-      const sig1URL = canvas1.toDataURL();
-      const sig2URL = canvas2.toDataURL();
       const img1 = new Image();
       const img2 = new Image();
-      img1.src = sig1URL;
-      img2.src = sig2URL;
-      img1.style = canvas1.style;
-      img2.style = canvas2.style;
+      img1.src = canvas1.toDataURL();
+      img2.src = canvas2.toDataURL();
+      img1.style = canvas1.style.cssText;
+      img2.style = canvas2.style.cssText;
       clone.appendChild(img1);
       clone.appendChild(img2);
       canvas1.remove();
@@ -108,9 +121,29 @@
       const { jsPDF } = window.jspdf;
       const pdf = new jsPDF({ orientation: 'portrait', unit: 'px', format: [1012, 987] });
       pdf.addImage(pdfData, 'PNG', 0, 0, 1012, 987);
-      pdf.save('Filled_Tool_Return_Form.pdf');
+      const pdfBlob = pdf.output('blob');
+
+      const photo = document.getElementById("photo").files[0];
+      const video = document.getElementById("video").files[0];
+      const files = [new File([pdfBlob], 'ToolReturnForm.pdf', { type: 'application/pdf' })];
+      if (photo) files.push(new File([photo], 'ToolPhoto' + photo.name.slice(-4)));
+      if (video) files.push(new File([video], 'ToolVideo' + video.name.slice(-4)));
+
+      if (!navigator.canShare || !navigator.canShare({ files })) {
+        alert("Your device doesn't support native sharing.");
+        return;
+      }
+
+      try {
+        await navigator.share({
+          files,
+          title: "Tool Return Submission",
+          text: "Form + Media attached"
+        });
+      } catch (err) {
+        console.error("Sharing failed", err);
+      }
     });
   </script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </body>
 </html>
