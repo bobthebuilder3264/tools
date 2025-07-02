@@ -1,114 +1,116 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tool Return Form</title>
   <style>
-    body { font-family: sans-serif; margin: 0; padding: 1em; background: #f9f9f9; }
-    .form-container { max-width: 600px; margin: auto; background: white; padding: 1em; border-radius: 10px; box-shadow: 0 0 10px #ccc; }
-    .input-group { margin-bottom: 1em; }
-    label { display: block; font-weight: bold; margin-bottom: 0.5em; }
-    input, textarea { width: 100%; padding: 0.5em; font-size: 1em; }
-    canvas { border: 1px solid #ccc; width: 100%; height: 150px; touch-action: none; }
-    button { padding: 0.75em 1em; font-size: 1em; margin-right: 1em; }
+    body { margin: 0; font-family: sans-serif; background: #eee; }
+    .container {
+      position: relative;
+      width: 1012px;
+      margin: 2em auto;
+      background: white;
+      background-image: url('9be7eced-f929-4f20-854d-ccc8ec549328.png');
+      background-size: cover;
+      background-repeat: no-repeat;
+      height: 987px;
+    }
+    .input-field, .signature {
+      position: absolute;
+      font-size: 16px;
+      padding: 2px;
+      border: 1px solid #ccc;
+      background: rgba(255,255,255,0.8);
+    }
+    .signature-pad {
+      position: absolute;
+      border: 1px solid #ccc;
+      background: white;
+    }
+    #shareBtn { display: block; margin: 20px auto; padding: 10px 20px; font-size: 16px; }
   </style>
 </head>
 <body>
-  <div class="form-container">
-    <h2>Tool Return Form</h2>
-    <div class="input-group">
-      <label for="empId">Employee ID</label>
-      <input type="text" id="empId" required />
-    </div>
-    <div class="input-group">
-      <label for="desc">Tool Issue Description</label>
-      <textarea id="desc" rows="4"></textarea>
-    </div>
-    <div class="input-group">
-      <label>Signature</label>
-      <canvas id="signature"></canvas>
-      <button onclick="clearSignature()">Clear Signature</button>
-    </div>
-    <div class="input-group">
-      <label for="photo">Upload Photo</label>
-      <input type="file" id="photo" accept="image/*" />
-    </div>
-    <div class="input-group">
-      <label for="video">Upload Video</label>
-      <input type="file" id="video" accept="video/*" />
-    </div>
-    <button onclick="shareFiles()">Share</button>
+  <div class="container" id="formContainer">
+    <textarea class="input-field" style="top: 85px; left: 250px; width: 200px; height: 20px;" placeholder="Date"></textarea>
+    <textarea class="input-field" style="top: 110px; left: 250px; width: 200px; height: 20px;" placeholder="Time"></textarea>
+    <textarea class="input-field" style="top: 135px; left: 250px; width: 500px; height: 20px;" placeholder="Location"></textarea>
+
+    <textarea class="input-field" style="top: 190px; left: 20px; width: 950px; height: 60px;" placeholder="Description of Equipment"></textarea>
+    <textarea class="input-field" style="top: 270px; left: 20px; width: 950px; height: 60px;" placeholder="Description of Damage/Loss"></textarea>
+    <textarea class="input-field" style="top: 350px; left: 20px; width: 950px; height: 40px;" placeholder="Witnesses"></textarea>
+    <textarea class="input-field" style="top: 410px; left: 20px; width: 950px; height: 40px;" placeholder="Notes"></textarea>
+
+    <canvas class="signature-pad" id="employeeSig" width="300" height="60" style="top: 620px; left: 40px;"></canvas>
+    <canvas class="signature-pad" id="supervisorSig" width="300" height="60" style="top: 620px; left: 550px;"></canvas>
   </div>
 
+  <button id="shareBtn">Export Form & Share</button>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script>
-    const canvas = document.getElementById("signature");
-    const ctx = canvas.getContext("2d");
+    const canvas1 = document.getElementById('employeeSig');
+    const canvas2 = document.getElementById('supervisorSig');
+    const sig1 = canvas1.getContext('2d');
+    const sig2 = canvas2.getContext('2d');
     let drawing = false;
 
-    canvas.addEventListener("pointerdown", e => {
-      drawing = true;
-      ctx.beginPath();
-      ctx.moveTo(e.offsetX, e.offsetY);
+    [canvas1, canvas2].forEach((c, i) => {
+      const ctx = i === 0 ? sig1 : sig2;
+      c.addEventListener('pointerdown', e => {
+        drawing = true;
+        ctx.beginPath();
+        ctx.moveTo(e.offsetX, e.offsetY);
+      });
+      c.addEventListener('pointermove', e => {
+        if (!drawing) return;
+        ctx.lineTo(e.offsetX, e.offsetY);
+        ctx.stroke();
+      });
+      c.addEventListener('pointerup', () => drawing = false);
     });
-    canvas.addEventListener("pointermove", e => {
-      if (!drawing) return;
-      ctx.lineTo(e.offsetX, e.offsetY);
-      ctx.stroke();
+
+    document.getElementById('shareBtn').addEventListener('click', async () => {
+      const container = document.getElementById('formContainer');
+      const clone = container.cloneNode(true);
+      const inputs = clone.querySelectorAll('textarea');
+      inputs.forEach(input => {
+        const span = document.createElement('div');
+        span.style.position = 'absolute';
+        span.style.left = input.style.left;
+        span.style.top = input.style.top;
+        span.style.width = input.style.width;
+        span.style.height = input.style.height;
+        span.style.fontSize = '16px';
+        span.style.whiteSpace = 'pre-wrap';
+        span.style.fontFamily = 'sans-serif';
+        span.innerText = input.value;
+        clone.appendChild(span);
+        input.remove();
+      });
+
+      const sig1URL = canvas1.toDataURL();
+      const sig2URL = canvas2.toDataURL();
+      const img1 = new Image();
+      const img2 = new Image();
+      img1.src = sig1URL;
+      img2.src = sig2URL;
+      img1.style = canvas1.style;
+      img2.style = canvas2.style;
+      clone.appendChild(img1);
+      clone.appendChild(img2);
+      canvas1.remove();
+      canvas2.remove();
+
+      const pdfCanvas = await html2canvas(clone);
+      const pdfData = pdfCanvas.toDataURL('image/png');
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'px', format: [1012, 987] });
+      pdf.addImage(pdfData, 'PNG', 0, 0, 1012, 987);
+      pdf.save('Filled_Tool_Return_Form.pdf');
     });
-    canvas.addEventListener("pointerup", () => drawing = false);
-
-    function clearSignature() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-    }
-
-    async function shareFiles() {
-      const empId = document.getElementById("empId").value.trim();
-      const desc = document.getElementById("desc").value.trim();
-      if (!empId || !desc) return alert("Please fill out all fields.");
-
-      // Generate form image
-      const formCanvas = document.createElement("canvas");
-      formCanvas.width = 600;
-      formCanvas.height = 800;
-      const formCtx = formCanvas.getContext("2d");
-      formCtx.fillStyle = "white";
-      formCtx.fillRect(0, 0, formCanvas.width, formCanvas.height);
-      formCtx.fillStyle = "black";
-      formCtx.font = "20px sans-serif";
-      formCtx.fillText("Employee ID: " + empId, 20, 40);
-      formCtx.fillText("Description:", 20, 80);
-      formCtx.font = "16px sans-serif";
-      formCtx.fillText(desc, 20, 110);
-      formCtx.drawImage(canvas, 20, 150);
-
-      const formBlob = await new Promise(res => formCanvas.toBlob(res, "image/png"));
-      const date = new Date().toISOString().slice(0,10);
-      const files = [
-        new File([formBlob], `ToolForm_${empId}_${date}.png`, { type: "image/png" })
-      ];
-
-      const photo = document.getElementById("photo").files[0];
-      const video = document.getElementById("video").files[0];
-      if (photo) files.push(new File([photo], `Photo_${empId}_${date}${photo.name.slice(-4)}`));
-      if (video) files.push(new File([video], `Video_${empId}_${date}${video.name.slice(-4)}`));
-
-      if (!navigator.canShare || !navigator.canShare({ files })) {
-        alert("Your device/browser does not support sharing these files.");
-        return;
-      }
-
-      try {
-        await navigator.share({
-          files,
-          title: `Tool Return - ${empId}`,
-          text: `Form and media submitted on ${date}`
-        });
-      } catch (err) {
-        alert("Sharing canceled or failed.");
-        console.error(err);
-      }
-    }
   </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </body>
 </html>
