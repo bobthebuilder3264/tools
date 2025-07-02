@@ -3,147 +3,110 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tool Return Form</title>
+  <title>Equipment Damage Report</title>
+  <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
   <style>
-    body { margin: 0; font-family: sans-serif; background: #eee; }
-    .container {
-      position: relative;
-      width: 1012px;
-      margin: 2em auto;
-      background: white;
-      background-image: url('9be7eced-f929-4f20-854d-ccc8ec549328.png');
-      background-size: cover;
-      background-repeat: no-repeat;
-      height: 987px;
-    }
-    .input-field, .signature {
-      position: absolute;
-      font-size: 16px;
-      padding: 2px;
-      border: 1px solid #ccc;
-      background: rgba(255,255,255,0.8);
-    }
-    .signature-pad {
-      position: absolute;
-      border: 1px solid #ccc;
-      background: white;
-    }
-    .media-upload {
-      width: 1012px;
-      margin: auto;
-      background: #fff;
-      padding: 1em;
-      box-shadow: 0 0 10px #ccc;
-      text-align: center;
-    }
-    #shareBtn { display: block; margin: 20px auto; padding: 10px 20px; font-size: 16px; }
+    body { font-family: sans-serif; background: #f5f5f5; padding: 20px; }
+    .form { max-width: 600px; margin: auto; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px #ccc; }
+    .form input, .form textarea { width: 100%; margin-bottom: 10px; padding: 10px; font-size: 16px; }
+    .signature-pad { border: 1px solid #ccc; width: 100%; height: 100px; background: #fff; margin-bottom: 10px; }
+    button { padding: 10px 20px; font-size: 16px; }
   </style>
 </head>
 <body>
-  <div class="container" id="formContainer">
-    <textarea class="input-field" style="top: 85px; left: 250px; width: 200px; height: 20px;" placeholder="Date"></textarea>
-    <textarea class="input-field" style="top: 110px; left: 250px; width: 200px; height: 20px;" placeholder="Time"></textarea>
-    <textarea class="input-field" style="top: 135px; left: 250px; width: 500px; height: 20px;" placeholder="Location"></textarea>
-
-    <textarea class="input-field" style="top: 190px; left: 20px; width: 950px; height: 60px;" placeholder="Description of Equipment"></textarea>
-    <textarea class="input-field" style="top: 270px; left: 20px; width: 950px; height: 60px;" placeholder="Description of Damage/Loss"></textarea>
-    <textarea class="input-field" style="top: 350px; left: 20px; width: 950px; height: 40px;" placeholder="Witnesses"></textarea>
-    <textarea class="input-field" style="top: 410px; left: 20px; width: 950px; height: 40px;" placeholder="Notes"></textarea>
-
-    <canvas class="signature-pad" id="employeeSig" width="300" height="60" style="top: 620px; left: 40px;"></canvas>
-    <canvas class="signature-pad" id="supervisorSig" width="300" height="60" style="top: 620px; left: 550px;"></canvas>
+  <div class="form">
+    <h2>Equipment Damage Report</h2>
+    <input type="text" id="empName" placeholder="Reporting Employee Name">
+    <input type="text" id="empId" placeholder="Employee ID">
+    <input type="text" id="equipment" placeholder="Equipment">
+    <input type="text" id="serial" placeholder="Serial No.">
+    <input type="text" id="location" placeholder="Location">
+    <input type="text" id="incidentDate" placeholder="Incident Date">
+    <input type="text" id="incidentTime" placeholder="Incident Time">
+    <textarea id="description" placeholder="Description of Equipment"></textarea>
+    <textarea id="damage" placeholder="Description of Damage/Loss"></textarea>
+    <textarea id="witness" placeholder="Witnesses"></textarea>
+    <textarea id="notes" placeholder="Notes"></textarea>
+    <label>Employee Signature:</label>
+    <canvas id="empSig" class="signature-pad"></canvas>
+    <label>Supervisor Signature:</label>
+    <canvas id="supSig" class="signature-pad"></canvas>
+    <input type="file" id="photo" accept="image/*">
+    <input type="file" id="video" accept="video/*">
+    <button onclick="generatePDF()">Generate & Share</button>
   </div>
 
-  <div class="media-upload">
-    <label for="photo">Upload Photo: </label>
-    <input type="file" id="photo" accept="image/*"><br><br>
-    <label for="video">Upload Video: </label>
-    <input type="file" id="video" accept="video/*"><br><br>
-    <button id="shareBtn">Export Form & Share</button>
-  </div>
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script>
-    const canvas1 = document.getElementById('employeeSig');
-    const canvas2 = document.getElementById('supervisorSig');
-    const sig1 = canvas1.getContext('2d');
-    const sig2 = canvas2.getContext('2d');
     let drawing = false;
-
-    [canvas1, canvas2].forEach((c, i) => {
-      const ctx = i === 0 ? sig1 : sig2;
-      c.addEventListener('pointerdown', e => {
+    function setupSigPad(canvas) {
+      const ctx = canvas.getContext("2d");
+      canvas.addEventListener("pointerdown", e => {
         drawing = true;
         ctx.beginPath();
         ctx.moveTo(e.offsetX, e.offsetY);
       });
-      c.addEventListener('pointermove', e => {
+      canvas.addEventListener("pointermove", e => {
         if (!drawing) return;
         ctx.lineTo(e.offsetX, e.offsetY);
         ctx.stroke();
       });
-      c.addEventListener('pointerup', () => drawing = false);
-    });
+      canvas.addEventListener("pointerup", () => drawing = false);
+    }
+    setupSigPad(document.getElementById("empSig"));
+    setupSigPad(document.getElementById("supSig"));
 
-    document.getElementById('shareBtn').addEventListener('click', async () => {
-      const container = document.getElementById('formContainer');
-      const clone = container.cloneNode(true);
-      const inputs = clone.querySelectorAll('textarea');
-      inputs.forEach(input => {
-        const span = document.createElement('div');
-        span.style.position = 'absolute';
-        span.style.left = input.style.left;
-        span.style.top = input.style.top;
-        span.style.width = input.style.width;
-        span.style.height = input.style.height;
-        span.style.fontSize = '16px';
-        span.style.whiteSpace = 'pre-wrap';
-        span.style.fontFamily = 'sans-serif';
-        span.innerText = input.value;
-        clone.appendChild(span);
-        input.remove();
-      });
+    async function generatePDF() {
+      const existingPdfBytes = await fetch("Equipment_Damage_Report_Form.pdf").then(res => res.arrayBuffer());
+      const pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
+      const pages = pdfDoc.getPages();
+      const firstPage = pages[0];
+      const { width, height } = firstPage.getSize();
 
-      const img1 = new Image();
-      const img2 = new Image();
-      img1.src = canvas1.toDataURL();
-      img2.src = canvas2.toDataURL();
-      img1.style = canvas1.style.cssText;
-      img2.style = canvas2.style.cssText;
-      clone.appendChild(img1);
-      clone.appendChild(img2);
-      canvas1.remove();
-      canvas2.remove();
+      const drawText = (text, x, y, size = 12) => {
+        firstPage.drawText(text || '', { x, y, size });
+      };
 
-      const pdfCanvas = await html2canvas(clone);
-      const pdfData = pdfCanvas.toDataURL('image/png');
-      const { jsPDF } = window.jspdf;
-      const pdf = new jsPDF({ orientation: 'portrait', unit: 'px', format: [1012, 987] });
-      pdf.addImage(pdfData, 'PNG', 0, 0, 1012, 987);
-      const pdfBlob = pdf.output('blob');
+      drawText(document.getElementById("empName").value, 70, height - 80);
+      drawText(document.getElementById("equipment").value, 320, height - 80);
+      drawText(document.getElementById("empId").value, 70, height - 100);
+      drawText(document.getElementById("location").value, 320, height - 100);
+      drawText(document.getElementById("incidentDate").value, 70, height - 120);
+      drawText(document.getElementById("incidentTime").value, 320, height - 120);
+
+      drawText(document.getElementById("description").value, 70, height - 160);
+      drawText(document.getElementById("damage").value, 70, height - 220);
+      drawText(document.getElementById("witness").value, 70, height - 280);
+      drawText(document.getElementById("notes").value, 70, height - 340);
+
+      const embedSig = async (canvas) => {
+        const pngUrl = canvas.toDataURL();
+        const pngImageBytes = await fetch(pngUrl).then(res => res.arrayBuffer());
+        const pngImage = await pdfDoc.embedPng(pngImageBytes);
+        return pngImage;
+      };
+
+      const sig1 = await embedSig(document.getElementById("empSig"));
+      const sig2 = await embedSig(document.getElementById("supSig"));
+      firstPage.drawImage(sig1, { x: 70, y: 140, width: 150, height: 40 });
+      firstPage.drawImage(sig2, { x: 320, y: 140, width: 150, height: 40 });
+
+      const pdfBytes = await pdfDoc.save();
+      const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const files = [new File([pdfBlob], 'FilledReport.pdf')];
 
       const photo = document.getElementById("photo").files[0];
       const video = document.getElementById("video").files[0];
-      const files = [new File([pdfBlob], 'ToolReturnForm.pdf', { type: 'application/pdf' })];
-      if (photo) files.push(new File([photo], 'ToolPhoto' + photo.name.slice(-4)));
-      if (video) files.push(new File([video], 'ToolVideo' + video.name.slice(-4)));
+      if (photo) files.push(photo);
+      if (video) files.push(video);
 
-      if (!navigator.canShare || !navigator.canShare({ files })) {
-        alert("Your device doesn't support native sharing.");
-        return;
+      if (navigator.canShare && navigator.canShare({ files })) {
+        await navigator.share({ files, title: 'Damage Report Submission', text: 'See attached form + media' });
+      } else {
+        alert("Sharing not supported on this device. PDF generated.");
+        const url = URL.createObjectURL(pdfBlob);
+        window.open(url);
       }
-
-      try {
-        await navigator.share({
-          files,
-          title: "Tool Return Submission",
-          text: "Form + Media attached"
-        });
-      } catch (err) {
-        console.error("Sharing failed", err);
-      }
-    });
+    }
   </script>
 </body>
 </html>
