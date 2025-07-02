@@ -1,16 +1,44 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Equipment Damage Report</title>
   <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
   <style>
-    body { font-family: sans-serif; background: #f5f5f5; padding: 20px; }
-    .form { max-width: 600px; margin: auto; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px #ccc; }
-    .form input, .form textarea { width: 100%; margin-bottom: 10px; padding: 10px; font-size: 16px; }
-    .signature-pad { border: 1px solid #ccc; width: 100%; height: 100px; background: #fff; margin-bottom: 10px; }
-    button { padding: 10px 20px; font-size: 16px; }
+    body {
+      font-family: sans-serif;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+    .form {
+      max-width: 600px;
+      margin: auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px #ccc;
+    }
+    .form input, .form textarea {
+      width: 100%;
+      margin-bottom: 10px;
+      padding: 10px;
+      font-size: 16px;
+    }
+    .signature-pad {
+      border: 1px solid #ccc;
+      width: 100%;
+      height: 100px;
+      background: #fff;
+      margin-bottom: 5px;
+      touch-action: none; /* Prevents touch scrolling while signing */
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin-top: 10px;
+      margin-right: 10px;
+    }
   </style>
 </head>
 <body>
@@ -27,10 +55,15 @@
     <textarea id="damage" placeholder="Description of Damage/Loss"></textarea>
     <textarea id="witness" placeholder="Witnesses"></textarea>
     <textarea id="notes" placeholder="Notes"></textarea>
+
     <label>Employee Signature:</label>
     <canvas id="empSig" class="signature-pad"></canvas>
+    <button onclick="clearCanvas('empSig')">Clear Employee Signature</button>
+
     <label>Supervisor Signature:</label>
     <canvas id="supSig" class="signature-pad"></canvas>
+    <button onclick="clearCanvas('supSig')">Clear Supervisor Signature</button>
+
     <input type="file" id="photo" accept="image/*">
     <input type="file" id="video" accept="video/*">
     <button onclick="generatePDF()">Generate & Share</button>
@@ -38,20 +71,36 @@
 
   <script>
     let drawing = false;
+
     function setupSigPad(canvas) {
       const ctx = canvas.getContext("2d");
+
+      // Prevent scrolling while signing
+      canvas.addEventListener("touchstart", e => e.preventDefault(), { passive: false });
+      canvas.addEventListener("touchmove", e => e.preventDefault(), { passive: false });
+
       canvas.addEventListener("pointerdown", e => {
         drawing = true;
         ctx.beginPath();
         ctx.moveTo(e.offsetX, e.offsetY);
       });
+
       canvas.addEventListener("pointermove", e => {
         if (!drawing) return;
         ctx.lineTo(e.offsetX, e.offsetY);
         ctx.stroke();
       });
+
       canvas.addEventListener("pointerup", () => drawing = false);
+      canvas.addEventListener("pointerleave", () => drawing = false);
     }
+
+    function clearCanvas(id) {
+      const canvas = document.getElementById(id);
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
     setupSigPad(document.getElementById("empSig"));
     setupSigPad(document.getElementById("supSig"));
 
@@ -72,7 +121,6 @@
       drawText(document.getElementById("location").value, 320, height - 100);
       drawText(document.getElementById("incidentDate").value, 70, height - 120);
       drawText(document.getElementById("incidentTime").value, 320, height - 120);
-
       drawText(document.getElementById("description").value, 70, height - 160);
       drawText(document.getElementById("damage").value, 70, height - 220);
       drawText(document.getElementById("witness").value, 70, height - 280);
@@ -81,8 +129,7 @@
       const embedSig = async (canvas) => {
         const pngUrl = canvas.toDataURL();
         const pngImageBytes = await fetch(pngUrl).then(res => res.arrayBuffer());
-        const pngImage = await pdfDoc.embedPng(pngImageBytes);
-        return pngImage;
+        return await pdfDoc.embedPng(pngImageBytes);
       };
 
       const sig1 = await embedSig(document.getElementById("empSig"));
