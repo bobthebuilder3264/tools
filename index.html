@@ -9,7 +9,7 @@
     body { font-family: "Segoe UI", sans-serif; background: #f4f6f8; padding: 20px; margin: 0; }
     .form { max-width: 700px; margin: auto; background: #fff; padding: 30px; border-radius: 12px; }
     h2 { text-align: center; margin-bottom: 24px; }
-    textarea { width: 100%; margin-bottom: 5px; padding: 12px; font-size: 16px; border: 1px solid #ddd; border-radius: 8px; }
+    textarea { width: 100%; margin-bottom: 5px; padding: 12px; font-size: 16px; border: 1px solid #ddd; border-radius: 8px; resize: none; }
     .limit-warning { font-size: 12px; color: red; margin-bottom: 15px; display: none; }
     .signature-pad { border: 1px solid #ddd; width: 100%; height: 120px; background: #fff; border-radius: 6px; touch-action: none; }
     .sig-btn { margin-top: 8px; padding: 6px 12px; background: #e74c3c; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
@@ -40,8 +40,6 @@
 
     function setupSigPad(canvas) {
       const ctx = canvas.getContext("2d");
-
-      // Prevent scrolling during touch
       canvas.addEventListener("touchstart", e => e.preventDefault(), { passive: false });
       canvas.addEventListener("touchmove", e => e.preventDefault(), { passive: false });
 
@@ -69,12 +67,31 @@
 
     setupSigPad(document.getElementById("empSig"));
 
-    // Limit textarea to 6 lines
+    // Accurate wrap-based 6-line limit for textarea
     const textarea = document.getElementById("conditionReport");
     const warning = document.getElementById("limitWarning");
+    const tempCanvas = document.createElement("canvas");
+    const tempCtx = tempCanvas.getContext("2d");
+    tempCtx.font = "16px Segoe UI";
+
     textarea.addEventListener("input", () => {
-      let lines = textarea.value.split("\n");
+      const words = textarea.value.split(/\s+/);
+      const lines = [];
+      let currentLine = "";
+
+      words.forEach(word => {
+        const testLine = currentLine ? currentLine + " " + word : word;
+        if (tempCtx.measureText(testLine).width > textarea.clientWidth - 24) {
+          lines.push(currentLine);
+          currentLine = word;
+        } else {
+          currentLine = testLine;
+        }
+      });
+      if (currentLine) lines.push(currentLine);
+
       if (lines.length > 6) {
+        // Trim excess visually wrapped lines
         textarea.value = lines.slice(0, 6).join("\n");
         warning.style.display = "block";
       } else {
@@ -90,33 +107,30 @@
       const { height } = firstPage.getSize();
 
       const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+      const fontSize = 10;
+      const lineHeight = fontSize * 1.0; // exact spacing 1.0
 
-      // PDF positioning
       const startX = 63;
       const startY_topOrigin = 237.53;
       const startY = height - startY_topOrigin;
-      const lineHeight = 12;
       const maxWidth = 480;
 
-      // Wrap & split into lines
-      const wrappedLines = wrapText(textarea.value, font, 10, maxWidth).slice(0, 6);
+      const wrappedLines = wrapText(textarea.value, font, fontSize, maxWidth).slice(0, 6);
 
       wrappedLines.forEach((line, i) => {
         firstPage.drawText(line, {
           x: startX,
           y: startY - (i * lineHeight),
-          size: 10,
+          size: fontSize,
           font
         });
       });
 
-      // Signature
       const pngUrl = document.getElementById("empSig").toDataURL();
       const pngImageBytes = await fetch(pngUrl).then(res => res.arrayBuffer());
       const sigImage = await pdfDoc.embedPng(pngImageBytes);
       firstPage.drawImage(sigImage, { x: 70, y: 140, width: 150, height: 40 });
 
-      // Save PDF
       const pdfBytes = await pdfDoc.save();
       const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
       const files = [new File([pdfBlob], 'SmallReport.pdf')];
