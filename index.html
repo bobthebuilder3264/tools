@@ -9,7 +9,8 @@
     body { font-family: "Segoe UI", sans-serif; background: #f4f6f8; padding: 20px; margin: 0; }
     .form { max-width: 700px; margin: auto; background: #fff; padding: 30px; border-radius: 12px; }
     h2 { text-align: center; margin-bottom: 24px; }
-    textarea { width: 100%; margin-bottom: 15px; padding: 12px; font-size: 16px; border: 1px solid #ddd; border-radius: 8px; }
+    textarea { width: 100%; margin-bottom: 5px; padding: 12px; font-size: 16px; border: 1px solid #ddd; border-radius: 8px; }
+    .limit-warning { font-size: 12px; color: red; margin-bottom: 15px; display: none; }
     .signature-pad { border: 1px solid #ddd; width: 100%; height: 120px; background: #fff; border-radius: 6px; touch-action: none; }
     .sig-btn { margin-top: 8px; padding: 6px 12px; background: #e74c3c; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
     .btn-primary { background: #0077cc; color: #fff; border: none; border-radius: 6px; padding: 12px 20px; font-size: 16px; cursor: pointer; margin-top: 20px; }
@@ -20,6 +21,7 @@
   <div class="form">
     <h2>Condition Report</h2>
     <textarea id="conditionReport" placeholder="Enter condition report (max 6 lines)"></textarea>
+    <div id="limitWarning" class="limit-warning">Max 6 lines reached</div>
 
     <div>
       <label>Employee Signature:</label>
@@ -67,6 +69,19 @@
 
     setupSigPad(document.getElementById("empSig"));
 
+    // Limit textarea to 6 lines
+    const textarea = document.getElementById("conditionReport");
+    const warning = document.getElementById("limitWarning");
+    textarea.addEventListener("input", () => {
+      let lines = textarea.value.split("\n");
+      if (lines.length > 6) {
+        textarea.value = lines.slice(0, 6).join("\n");
+        warning.style.display = "block";
+      } else {
+        warning.style.display = "none";
+      }
+    });
+
     async function generatePDF() {
       const existingPdfBytes = await fetch("SmallReport.pdf").then(res => res.arrayBuffer());
       const pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
@@ -76,17 +91,17 @@
 
       const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
 
-      // Text positioning logic
+      // PDF positioning
       const startX = 63;
       const startY_topOrigin = 237.53;
       const startY = height - startY_topOrigin;
       const lineHeight = 12;
-      const maxWidth = 480; // prevent overflow in PDF
+      const maxWidth = 480;
 
-      const conditionTextRaw = document.getElementById("conditionReport").value;
-      const conditionLines = wrapText(conditionTextRaw, font, 10, maxWidth).slice(0, 6);
+      // Wrap & split into lines
+      const wrappedLines = wrapText(textarea.value, font, 10, maxWidth).slice(0, 6);
 
-      conditionLines.forEach((line, i) => {
+      wrappedLines.forEach((line, i) => {
         firstPage.drawText(line, {
           x: startX,
           y: startY - (i * lineHeight),
@@ -106,13 +121,11 @@
       const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
       const files = [new File([pdfBlob], 'SmallReport.pdf')];
 
-      // Attach photo/video
       const photo = document.getElementById("photo").files[0];
       const video = document.getElementById("video").files[0];
       if (photo) files.push(photo);
       if (video) files.push(video);
 
-      // Share
       if (navigator.canShare && navigator.canShare({ files })) {
         await navigator.share({ files, title: 'Condition Report', text: 'See attached form + media' });
       } else {
@@ -122,13 +135,12 @@
       }
     }
 
-    // Text wrapping helper
     function wrapText(text, font, fontSize, maxWidth) {
       const words = text.split(/\s+/);
       const lines = [];
       let currentLine = "";
 
-      for (const word of words) {
+      words.forEach(word => {
         const testLine = currentLine ? currentLine + " " + word : word;
         const width = font.widthOfTextAtSize(testLine, fontSize);
         if (width > maxWidth && currentLine) {
@@ -137,7 +149,8 @@
         } else {
           currentLine = testLine;
         }
-      }
+      });
+
       if (currentLine) lines.push(currentLine);
       return lines;
     }
