@@ -21,42 +21,39 @@
   <div class="form">
     <h2>Condition Report</h2>
     <textarea id="conditionReport" placeholder="Enter condition report (max 6 lines approx)"></textarea>
-    <div id="limitWarning" class="limit-warning">Max 6 lines reached</div>
-
+    <div id="limitWarning" class="limit-warning">Max 6 lines reached - no more text allowed</div>
     <div>
       <label>Employee Signature:</label>
       <canvas id="empSig" class="signature-pad"></canvas>
       <button class="sig-btn" onclick="clearCanvas('empSig')">Clear Employee Signature</button>
     </div>
-
     <input type="file" id="photo" accept="image/*">
     <input type="file" id="video" accept="video/*">
-
     <button class="btn-primary" onclick="generatePDF()">Generate & Share</button>
   </div>
 
   <script>
     let drawing = false;
+    let lastValidText = "";
 
     function setupSigPad(canvas) {
       const ctx = canvas.getContext("2d");
-
       // Prevent scrolling during touch
       canvas.addEventListener("touchstart", e => e.preventDefault(), { passive: false });
       canvas.addEventListener("touchmove", e => e.preventDefault(), { passive: false });
-
+      
       canvas.addEventListener("pointerdown", e => {
         drawing = true;
         ctx.beginPath();
         ctx.moveTo(e.offsetX, e.offsetY);
       });
-
+      
       canvas.addEventListener("pointermove", e => {
         if (!drawing) return;
         ctx.lineTo(e.offsetX, e.offsetY);
         ctx.stroke();
       });
-
+      
       canvas.addEventListener("pointerup", () => drawing = false);
       canvas.addEventListener("pointerleave", () => drawing = false);
     }
@@ -69,24 +66,48 @@
 
     setupSigPad(document.getElementById("empSig"));
 
-    // Wrap text to max width and limit lines to 6, with warning
+    // Prevent typing beyond 6 lines
     const textarea = document.getElementById("conditionReport");
     const warning = document.getElementById("limitWarning");
 
-    textarea.addEventListener("input", async () => {
+    textarea.addEventListener("input", async (e) => {
       const pdfDoc = await PDFLib.PDFDocument.create();
       const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
-
+      
       // Wrap text based on current value
       const wrappedLines = wrapText(textarea.value, font, 10, 488);
-
+      
       if (wrappedLines.length > 6) {
-        // Cut to 6 lines
-        const limitedText = wrappedLines.slice(0,6).join(" ");
-        textarea.value = limitedText;
+        // Revert to last valid text and show warning
+        textarea.value = lastValidText;
         warning.style.display = "block";
+        // Prevent the cursor from moving
+        e.preventDefault();
       } else {
+        // Update last valid text and hide warning
+        lastValidText = textarea.value;
         warning.style.display = "none";
+      }
+    });
+
+    // Also check on keydown to catch attempts to type
+    textarea.addEventListener("keydown", async (e) => {
+      // Allow backspace, delete, arrow keys, etc.
+      const allowedKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'Tab'];
+      if (allowedKeys.includes(e.key) || e.ctrlKey || e.metaKey) {
+        return;
+      }
+
+      const pdfDoc = await PDFLib.PDFDocument.create();
+      const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+      
+      // Test what the text would be if this key is added
+      const testText = textarea.value + (e.key.length === 1 ? e.key : '');
+      const wrappedLines = wrapText(testText, font, 10, 488);
+      
+      if (wrappedLines.length > 6) {
+        e.preventDefault();
+        warning.style.display = "block";
       }
     });
 
@@ -96,21 +117,28 @@
       const pages = pdfDoc.getPages();
       const firstPage = pages[0];
       const { height } = firstPage.getSize();
-
       const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
 
+      // Your coordinates (top-left origin)
       const startX = 63;
       const startY_topOrigin = 237.53;
-      const startY = height - startY_topOrigin;
-      const lineHeight = 18;
+      const endY_topOrigin = 327.6;
+      
+      // Convert to PDF coordinates (bottom-left origin)
+      const startY_pdf = height - startY_topOrigin;
+      const endY_pdf = height - endY_topOrigin;
+      
+      // Calculate line spacing for 6 lines between start and end
+      const totalHeight = startY_pdf - endY_pdf; // Total vertical space
+      const lineSpacing = totalHeight / 5; // 5 gaps between 6 lines
+      
       const maxWidth = 488;
-
       const wrappedLines = wrapText(textarea.value, font, 10, maxWidth).slice(0, 6);
 
       wrappedLines.forEach((line, i) => {
         firstPage.drawText(line, {
           x: startX,
-          y: startY - (i * lineHeight),
+          y: startY_pdf - (i * lineSpacing),
           size: 10,
           font
         });
@@ -147,6 +175,7 @@
       words.forEach(word => {
         const testLine = currentLine ? currentLine + " " + word : word;
         const width = font.widthOfTextAtSize(testLine, fontSize);
+        
         if (width > maxWidth && currentLine) {
           lines.push(currentLine);
           currentLine = word;
