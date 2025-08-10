@@ -27,8 +27,9 @@
       <canvas id="empSig" class="signature-pad"></canvas>
       <button class="sig-btn" onclick="clearCanvas('empSig')">Clear Employee Signature</button>
     </div>
-    <input type="file" id="photo" accept="image/*">
-    <input type="file" id="video" accept="video/*">
+    <!-- Added multiple attribute to allow multiple files -->
+    <input type="file" id="photo" accept="image/*" multiple>
+    <input type="file" id="video" accept="video/*" multiple>
     <button class="btn-primary" onclick="generatePDF()">Generate & Share</button>
   </div>
 
@@ -81,18 +82,14 @@
         // Revert to last valid text and show warning
         textarea.value = lastValidText;
         warning.style.display = "block";
-        // Prevent the cursor from moving
         e.preventDefault();
       } else {
-        // Update last valid text and hide warning
         lastValidText = textarea.value;
         warning.style.display = "none";
       }
     });
 
-    // Also check on keydown to catch attempts to type
     textarea.addEventListener("keydown", async (e) => {
-      // Allow backspace, delete, arrow keys, etc.
       const allowedKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'Tab'];
       if (allowedKeys.includes(e.key) || e.ctrlKey || e.metaKey) {
         return;
@@ -101,7 +98,6 @@
       const pdfDoc = await PDFLib.PDFDocument.create();
       const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
       
-      // Test what the text would be if this key is added
       const testText = textarea.value + (e.key.length === 1 ? e.key : '');
       const wrappedLines = wrapText(testText, font, 10, 488);
       
@@ -110,6 +106,14 @@
         warning.style.display = "block";
       }
     });
+
+    // Rename file helper function
+    function renameFile(file, newName) {
+      return new File([file], newName, { type: file.type });
+    }
+    function getFileExtension(filename) {
+      return filename.slice(filename.lastIndexOf('.'));
+    }
 
     async function generatePDF() {
       const existingPdfBytes = await fetch("SmallReport.pdf").then(res => res.arrayBuffer());
@@ -129,8 +133,8 @@
       const endY_pdf = height - endY_topOrigin;
       
       // Calculate line spacing for 6 lines between start and end
-      const totalHeight = startY_pdf - endY_pdf; // Total vertical space
-      const lineSpacing = totalHeight / 5; // 5 gaps between 6 lines
+      const totalHeight = startY_pdf - endY_pdf;
+      const lineSpacing = totalHeight / 5;
       
       const maxWidth = 488;
       const wrappedLines = wrapText(textarea.value, font, 10, maxWidth).slice(0, 6);
@@ -151,12 +155,26 @@
 
       const pdfBytes = await pdfDoc.save();
       const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
-      const files = [new File([pdfBlob], 'SmallReport.pdf')];
+      // Rename PDF file here
+      const renamedPdf = renameFile(new File([pdfBlob], 'ConditionReport.pdf', { type: 'application/pdf' }), 'ConditionReport.pdf');
 
-      const photo = document.getElementById("photo").files[0];
-      const video = document.getElementById("video").files[0];
-      if (photo) files.push(photo);
-      if (video) files.push(video);
+      const files = [renamedPdf];
+
+      // Multiple photos support with renaming
+      const photoFiles = document.getElementById("photo").files;
+      for (let i = 0; i < photoFiles.length; i++) {
+        const file = photoFiles[i];
+        const newName = `photo_${i+1}${getFileExtension(file.name)}`;
+        files.push(renameFile(file, newName));
+      }
+
+      // Multiple videos support with renaming
+      const videoFiles = document.getElementById("video").files;
+      for (let i = 0; i < videoFiles.length; i++) {
+        const file = videoFiles[i];
+        const newName = `video_${i+1}${getFileExtension(file.name)}`;
+        files.push(renameFile(file, newName));
+      }
 
       if (navigator.canShare && navigator.canShare({ files })) {
         await navigator.share({ files, title: 'Condition Report', text: 'See attached form + media' });
