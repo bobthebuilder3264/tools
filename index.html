@@ -3,78 +3,227 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Report</title>
+  <title>Equipment Damage Report</title>
   <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
   <style>
-    body { font-family: "Segoe UI", sans-serif; background: #f4f6f8; padding: 20px; margin: 0; }
-    .form { max-width: 700px; margin: auto; background: #fff; padding: 30px; border-radius: 12px; }
-    h2 { text-align: center; margin-bottom: 24px; }
-    textarea { width: 100%; margin-bottom: 15px; padding: 12px; font-size: 16px; border: 1px solid #ddd; border-radius: 8px; }
-    .signature-pad { border: 1px solid #ddd; width: 100%; height: 120px; background: #fff; border-radius: 6px; }
-    .sig-btn { margin-top: 8px; padding: 6px 12px; background: #e74c3c; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
-    .btn-primary { background: #0077cc; color: #fff; border: none; border-radius: 6px; padding: 12px 20px; font-size: 16px; cursor: pointer; margin-top: 20px; }
+    :root {
+      --main-bg: #f4f6f8;
+      --card-bg: #ffffff;
+      --accent: #0077cc;
+      --border: #ddd;
+      --text: #333;
+    }
+
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background: var(--main-bg);
+      padding: 20px;
+      margin: 0;
+      color: var(--text);
+    }
+
+    .form {
+      max-width: 700px;
+      margin: auto;
+      background: var(--card-bg);
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 24px;
+      color: #222;
+    }
+
+    input, textarea {
+      width: 100%;
+      margin-bottom: 15px;
+      padding: 12px;
+      font-size: 16px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    input:focus, textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 5px rgba(0, 119, 204, 0.3);
+      outline: none;
+    }
+
+    label {
+      font-weight: 600;
+      margin-top: 15px;
+      display: block;
+    }
+
+    .signature-block {
+      margin-bottom: 25px;
+    }
+
+    .signature-pad {
+      border: 1px solid var(--border);
+      width: 100%;
+      height: 120px;
+      background: #fff;
+      border-radius: 6px;
+      touch-action: none;
+      box-shadow: inset 0 0 4px rgba(0,0,0,0.05);
+    }
+
+    .sig-btn {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 6px 12px;
+      font-size: 14px;
+      border: none;
+      background: #e74c3c;
+      color: #fff;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .sig-btn:hover {
+      background: #c0392b;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 12px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 20px;
+      transition: background 0.2s;
+    }
+
+    .btn-primary:hover {
+      background: #005fa3;
+    }
+
+    input[type="file"] {
+      margin-top: 15px;
+    }
   </style>
 </head>
 <body>
   <div class="form">
-    <h2>Condition Report</h2>
-    <textarea id="conditionReport" placeholder="Enter condition report (max 6 lines)"></textarea>
+    <h2>Equipment Damage Report</h2>
+    <input type="text" id="empName" placeholder="Reporting Employee Name">
+    <input type="text" id="empId" placeholder="Employee ID">
+    <input type="text" id="equipment" placeholder="Equipment">
+    <input type="text" id="serial" placeholder="Serial No.">
+    <input type="text" id="location" placeholder="Location">
+    <input type="text" id="incidentDate" placeholder="Incident Date">
+    <input type="text" id="incidentTime" placeholder="Incident Time">
+    <textarea id="description" placeholder="Description of Equipment"></textarea>
+    <textarea id="damage" placeholder="Description of Damage/Loss"></textarea>
+    <textarea id="witness" placeholder="Witnesses"></textarea>
+    <textarea id="notes" placeholder="Notes"></textarea>
 
-    <div>
+    <div class="signature-block">
       <label>Employee Signature:</label>
       <canvas id="empSig" class="signature-pad"></canvas>
       <button class="sig-btn" onclick="clearCanvas('empSig')">Clear Employee Signature</button>
     </div>
+
+    <div class="signature-block">
+      <label>Supervisor Signature:</label>
+      <canvas id="supSig" class="signature-pad"></canvas>
+      <button class="sig-btn" onclick="clearCanvas('supSig')">Clear Supervisor Signature</button>
+    </div>
+
+    <input type="file" id="photo" accept="image/*">
+    <input type="file" id="video" accept="video/*">
 
     <button class="btn-primary" onclick="generatePDF()">Generate & Share</button>
   </div>
 
   <script>
     let drawing = false;
+
     function setupSigPad(canvas) {
       const ctx = canvas.getContext("2d");
-      canvas.addEventListener("pointerdown", e => { drawing = true; ctx.beginPath(); ctx.moveTo(e.offsetX, e.offsetY); });
-      canvas.addEventListener("pointermove", e => { if (!drawing) return; ctx.lineTo(e.offsetX, e.offsetY); ctx.stroke(); });
+
+      canvas.addEventListener("touchstart", e => e.preventDefault(), { passive: false });
+      canvas.addEventListener("touchmove", e => e.preventDefault(), { passive: false });
+
+      canvas.addEventListener("pointerdown", e => {
+        drawing = true;
+        ctx.beginPath();
+        ctx.moveTo(e.offsetX, e.offsetY);
+      });
+
+      canvas.addEventListener("pointermove", e => {
+        if (!drawing) return;
+        ctx.lineTo(e.offsetX, e.offsetY);
+        ctx.stroke();
+      });
+
       canvas.addEventListener("pointerup", () => drawing = false);
       canvas.addEventListener("pointerleave", () => drawing = false);
     }
+
     function clearCanvas(id) {
       const canvas = document.getElementById(id);
       const ctx = canvas.getContext("2d");
       ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
+
     setupSigPad(document.getElementById("empSig"));
+    setupSigPad(document.getElementById("supSig"));
 
     async function generatePDF() {
-      const existingPdfBytes = await fetch("Report.pdf").then(res => res.arrayBuffer());
+      const existingPdfBytes = await fetch("SmallReport.pdf").then(res => res.arrayBuffer());
       const pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
       const pages = pdfDoc.getPages();
       const firstPage = pages[0];
-      const { height } = firstPage.getSize();
+      const { width, height } = firstPage.getSize();
 
-      const startX = 63; // from PDF-XChange
-      const startY_topOrigin = 237.53;
-      const startY = height - startY_topOrigin; // convert to bottom-left origin
+      const drawText = (text, x, y, size = 12) => {
+        firstPage.drawText(text || '', { x, y, size });
+      };
 
-      const lineHeight = 12; // ~10pt Arial with 1.0 spacing
-      const conditionText = document.getElementById("conditionReport").value.split("\n").slice(0, 6);
+      drawText(document.getElementById("empName").value, 70, height - 80);
+      drawText(document.getElementById("equipment").value, 320, height - 80);
+      drawText(document.getElementById("empId").value, 70, height - 100);
+      drawText(document.getElementById("location").value, 320, height - 100);
+      drawText(document.getElementById("incidentDate").value, 70, height - 120);
+      drawText(document.getElementById("incidentTime").value, 320, height - 120);
+      drawText(document.getElementById("description").value, 70, height - 160);
+      drawText(document.getElementById("damage").value, 70, height - 220);
+      drawText(document.getElementById("witness").value, 70, height - 280);
+      drawText(document.getElementById("notes").value, 70, height - 340);
 
-      conditionText.forEach((line, i) => {
-        firstPage.drawText(line || '', { x: startX, y: startY - (i * lineHeight), size: 10, font: pdfDoc.embedStandardFont(PDFLib.StandardFonts.Helvetica) });
-      });
+      const embedSig = async (canvas) => {
+        const pngUrl = canvas.toDataURL();
+        const pngImageBytes = await fetch(pngUrl).then(res => res.arrayBuffer());
+        return await pdfDoc.embedPng(pngImageBytes);
+      };
 
-      const pngUrl = document.getElementById("empSig").toDataURL();
-      const pngImageBytes = await fetch(pngUrl).then(res => res.arrayBuffer());
-      const sigImage = await pdfDoc.embedPng(pngImageBytes);
-      firstPage.drawImage(sigImage, { x: 70, y: 140, width: 150, height: 40 });
+      const sig1 = await embedSig(document.getElementById("empSig"));
+      const sig2 = await embedSig(document.getElementById("supSig"));
+      firstPage.drawImage(sig1, { x: 70, y: 140, width: 150, height: 40 });
+      firstPage.drawImage(sig2, { x: 320, y: 140, width: 150, height: 40 });
 
       const pdfBytes = await pdfDoc.save();
       const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
       const files = [new File([pdfBlob], 'FilledReport.pdf')];
 
+      const photo = document.getElementById("photo").files[0];
+      const video = document.getElementById("video").files[0];
+      if (photo) files.push(photo);
+      if (video) files.push(video);
+
       if (navigator.canShare && navigator.canShare({ files })) {
-        await navigator.share({ files, title: 'Condition Report', text: 'See attached form' });
+        await navigator.share({ files, title: 'Damage Report Submission', text: 'See attached form + media' });
       } else {
+        alert("Sharing not supported on this device. PDF generated.");
         const url = URL.createObjectURL(pdfBlob);
         window.open(url);
       }
