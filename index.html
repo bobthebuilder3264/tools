@@ -52,7 +52,7 @@
     setupSigPad(document.getElementById("empSig"));
 
     async function generatePDF() {
-      const existingPdfBytes = await fetch("Report.pdf").then(res => res.arrayBuffer());
+      const existingPdfBytes = await fetch("SmallReport.pdf").then(res => res.arrayBuffer());
       const pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
       const pages = pdfDoc.getPages();
       const firstPage = pages[0];
@@ -84,7 +84,7 @@
       // Save PDF
       const pdfBytes = await pdfDoc.save();
       const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
-      const files = [new File([pdfBlob], 'FilledReport.pdf')];
+      const files = [new File([pdfBlob], 'SmallReport.pdf')];
 
       // OG-style file append
       const photo = document.getElementById("photo").files[0];
