@@ -9,24 +9,62 @@
     body { font-family: "Segoe UI", sans-serif; background: #f4f6f8; padding: 20px; margin: 0; }
     .form { max-width: 700px; margin: auto; background: #fff; padding: 30px; border-radius: 12px; }
     h2 { text-align: center; margin-bottom: 24px; }
-    textarea { width: 100%; margin-bottom: 5px; padding: 12px; font-size: 16px; border: 1px solid #ddd; border-radius: 8px; }
+    label { font-weight: 600; display: block; margin-top: 12px; }
+    textarea, input, select { width: 100%; margin-bottom: 5px; padding: 8px; font-size: 14px; border: 1px solid #ddd; border-radius: 6px; }
     .limit-warning { font-size: 12px; color: red; margin-bottom: 15px; display: none; }
     .signature-pad { border: 1px solid #ddd; width: 100%; height: 120px; background: #fff; border-radius: 6px; touch-action: none; }
     .sig-btn { margin-top: 8px; padding: 6px 12px; background: #e74c3c; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
     .btn-primary { background: #0077cc; color: #fff; border: none; border-radius: 6px; padding: 12px 20px; font-size: 16px; cursor: pointer; margin-top: 20px; }
-    input[type="file"] { margin-top: 15px; display: block; }
+    input[type="file"] { margin-top: 10px; display: block; }
   </style>
 </head>
 <body>
   <div class="form">
     <h2>TOOL DISPOSITION FORM</h2>
-      <label>Condition Report:</label>
+
+    <label for="statusSelect">Select one:</label>
+    <select id="statusSelect">
+      <option value="">-- Choose --</option>
+      <option value="lost">Lost</option>
+      <option value="scrap">Damaged/Scrap</option>
+      <option value="inactive">Inactivated</option>
+    </select>
+
+    <label>Equipment SNG Number:</label>
+    <input type="text" id="equipSNG">
+
+    <label>Manufacturer:</label>
+    <input type="text" id="manufacturer">
+
+    <label>Part Number:</label>
+    <input type="text" id="partNumber">
+
+    <label>Aircraft Serial Number S/N:</label>
+    <input type="text" id="aircraftSN">
+
+    <label>Part Description:</label>
+    <input type="text" id="partDescription">
+
+    <label>Model Number:</label>
+    <input type="text" id="modelNumber">
+
+    <label>Serial Number:</label>
+    <input type="text" id="serialNumber">
+
+    <label>Name:</label>
+    <input type="text" id="name">
+
+    <label>Date (dd/mm/yyyy):</label>
+    <input type="text" id="dateField" placeholder="e.g. 11/08/2025">
+
+    <label>Condition Report:</label>
     <textarea id="conditionReport" placeholder="Enter condition report (max 6 lines)"></textarea>
     <div id="limitWarning" class="limit-warning">Max 6 lines reached - no more text allowed</div>
+
     <div>
       <label>Employee Signature:</label>
       <canvas id="empSig" class="signature-pad"></canvas>
-      <button class="sig-btn" onclick="clearCanvas('empSig')">Clear Employee Signature</button>
+      <button class="sig-btn" onclick="clearCanvas('empSig')">Clear Signature</button>
     </div>
 
     <div id="photoInputsContainer">
@@ -89,35 +127,17 @@
       }
     });
 
-    textarea.addEventListener("keydown", async (e) => {
-      const allowedKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'Tab'];
-      if (allowedKeys.includes(e.key) || e.ctrlKey || e.metaKey) return;
-
-      const pdfDoc = await PDFLib.PDFDocument.create();
-      const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
-      const testText = textarea.value + (e.key.length === 1 ? e.key : '');
-      const wrappedLines = wrapText(testText, font, 10, 488);
-      if (wrappedLines.length > 6) {
-        e.preventDefault();
-        warning.style.display = "block";
-      }
-    });
-
-    // Add new photo input on file select
     document.getElementById('photoInputsContainer').addEventListener('change', (e) => {
       if (e.target.classList.contains('photo-input') && e.target.files.length > 0) {
-        // Disable current input
         e.target.disabled = true;
-        // Add a new empty input
         const newInput = document.createElement('input');
         newInput.type = 'file';
         newInput.accept = 'image/*';
         newInput.className = 'photo-input';
-        document.getElementById('photoInputsContainer').appendChild(newInput);
+        e.target.parentNode.appendChild(newInput);
       }
     });
 
-    // Add new video input on file select
     document.getElementById('videoInputsContainer').addEventListener('change', (e) => {
       if (e.target.classList.contains('video-input') && e.target.files.length > 0) {
         e.target.disabled = true;
@@ -125,7 +145,7 @@
         newInput.type = 'file';
         newInput.accept = 'video/*';
         newInput.className = 'video-input';
-        document.getElementById('videoInputsContainer').appendChild(newInput);
+        e.target.parentNode.appendChild(newInput);
       }
     });
 
@@ -144,7 +164,31 @@
       const { height } = firstPage.getSize();
       const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
 
-      // Text coords
+      const drawTextAt = (txt, x, y) => {
+        firstPage.drawText(txt || "", { x, y: height - y, size: 10, font });
+      };
+
+      // Text fields
+      drawTextAt(document.getElementById("equipSNG").value, 144.6, 123.86);
+      drawTextAt(document.getElementById("manufacturer").value, 144.6, 141.87);
+      drawTextAt(document.getElementById("partNumber").value, 144.6, 159.9);
+      drawTextAt(document.getElementById("aircraftSN").value, 144.6, 177.87);
+      drawTextAt(document.getElementById("partDescription").value, 396.52, 123.86);
+      drawTextAt(document.getElementById("modelNumber").value, 396.52, 141.87);
+      drawTextAt(document.getElementById("serialNumber").value, 396.52, 159.9);
+
+      // Name + date combined
+      const name = document.getElementById("name").value;
+      const dateVal = document.getElementById("dateField").value;
+      drawTextAt(`${name}, ${dateVal}`, 133.1, 380.5);
+
+      // Lost/Damaged/Scrap/Inactivated selection
+      const status = document.getElementById("statusSelect").value;
+      if (status === "lost") drawTextAt("X", 96.88, 99.51);
+      if (status === "scrap") drawTextAt("X", 241, 99.51);
+      if (status === "inactive") drawTextAt("X", 422, 99.51);
+
+      // Condition Report
       const startX = 63;
       const startY_topOrigin = 237.53;
       const endY_topOrigin = 327.6;
@@ -154,47 +198,27 @@
       const lineSpacing = totalHeight / 5;
       const maxWidth = 488;
       const wrappedLines = wrapText(textarea.value, font, 10, maxWidth).slice(0, 6);
-
       wrappedLines.forEach((line, i) => {
-        firstPage.drawText(line, {
-          x: startX,
-          y: startY_pdf - (i * lineSpacing),
-          size: 10,
-          font
-        });
+        firstPage.drawText(line, { x: startX, y: startY_pdf - (i * lineSpacing), size: 10, font });
       });
 
+      // Signature
       const pngUrl = document.getElementById("empSig").toDataURL();
       const pngImageBytes = await fetch(pngUrl).then(res => res.arrayBuffer());
       const sigImage = await pdfDoc.embedPng(pngImageBytes);
-      firstPage.drawImage(sigImage, { x: 70, y: 140, width: 150, height: 40 });
+      firstPage.drawImage(sigImage, { x: 163.8, y: height - 370.6 - 40, width: 150, height: 40 });
 
+      // Save & share
       const pdfBytes = await pdfDoc.save();
       const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
       const renamedPdf = renameFile(new File([pdfBlob], 'ConditionReport.pdf', { type: 'application/pdf' }), 'ConditionReport.pdf');
 
       const files = [renamedPdf];
-
-      // Collect all photos from all inputs
-      const photoInputs = document.querySelectorAll('.photo-input');
-      let photoIndex = 1;
-      photoInputs.forEach(input => {
-        if (input.files.length > 0) {
-          for (const file of input.files) {
-            files.push(renameFile(file, `photo_${photoIndex++}${getFileExtension(file.name)}`));
-          }
-        }
+      document.querySelectorAll('.photo-input').forEach((input, i) => {
+        if (input.files.length > 0) files.push(renameFile(input.files[0], `photo_${i+1}${getFileExtension(input.files[0].name)}`));
       });
-
-      // Collect all videos from all inputs
-      const videoInputs = document.querySelectorAll('.video-input');
-      let videoIndex = 1;
-      videoInputs.forEach(input => {
-        if (input.files.length > 0) {
-          for (const file of input.files) {
-            files.push(renameFile(file, `video_${videoIndex++}${getFileExtension(file.name)}`));
-          }
-        }
+      document.querySelectorAll('.video-input').forEach((input, i) => {
+        if (input.files.length > 0) files.push(renameFile(input.files[0], `video_${i+1}${getFileExtension(input.files[0].name)}`));
       });
 
       if (navigator.canShare && navigator.canShare({ files })) {
@@ -210,11 +234,9 @@
       const words = text.split(/\s+/);
       const lines = [];
       let currentLine = "";
-
       words.forEach(word => {
         const testLine = currentLine ? currentLine + " " + word : word;
         const width = font.widthOfTextAtSize(testLine, fontSize);
-
         if (width > maxWidth && currentLine) {
           lines.push(currentLine);
           currentLine = word;
@@ -222,7 +244,6 @@
           currentLine = testLine;
         }
       });
-
       if (currentLine) lines.push(currentLine);
       return lines;
     }
