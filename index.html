@@ -169,6 +169,80 @@
     const textarea = document.getElementById("conditionReport");
     const warning = document.getElementById("limitWarning");
 
+    // Text field limits based on PDF coordinates
+    const fieldLimits = {
+      equipmentSNG: { maxWidth: 301.1 - 144.60 }, // 156.5
+      manufacturer: { maxWidth: 301.1 - 144.60 }, // 156.5
+      partNumber: { maxWidth: 301.1 - 144.6 }, // 156.5
+      aircraftSerial: { maxWidth: 301.1 - 144.6 }, // 156.5
+      partDescription: { maxWidth: 553 - 396.52 }, // 156.48
+      modelNumber: { maxWidth: 553 - 396.52 }, // 156.48
+      serialNumber: { maxWidth: 553 - 396.52 }, // 156.48
+      nameDate: { maxWidth: 551 - 260 } // 291
+    };
+
+    // Apply limits to text input fields
+    function setupFieldLimit(fieldId, maxWidth) {
+      const field = document.getElementById(fieldId);
+      let lastValidValue = "";
+      
+      field.addEventListener("input", async (e) => {
+        const pdfDoc = await PDFLib.PDFDocument.create();
+        const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+        const textWidth = font.widthOfTextAtSize(field.value, 10);
+        
+        if (textWidth > maxWidth) {
+          field.value = lastValidValue;
+          e.preventDefault();
+        } else {
+          lastValidValue = field.value;
+        }
+      });
+      
+      field.addEventListener("keydown", async (e) => {
+        const allowedKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'Tab'];
+        if (allowedKeys.includes(e.key) || e.ctrlKey || e.metaKey) return;
+        
+        const pdfDoc = await PDFLib.PDFDocument.create();
+        const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+        const testText = field.value + (e.key.length === 1 ? e.key : '');
+        const textWidth = font.widthOfTextAtSize(testText, 10);
+        
+        if (textWidth > maxWidth) {
+          e.preventDefault();
+        }
+      });
+    }
+
+    // Setup limits for all fields
+    setupFieldLimit('equipmentSNG', fieldLimits.equipmentSNG.maxWidth);
+    setupFieldLimit('manufacturer', fieldLimits.manufacturer.maxWidth);
+    setupFieldLimit('partNumber', fieldLimits.partNumber.maxWidth);
+    setupFieldLimit('aircraftSerial', fieldLimits.aircraftSerial.maxWidth);
+    setupFieldLimit('partDescription', fieldLimits.partDescription.maxWidth);
+    setupFieldLimit('modelNumber', fieldLimits.modelNumber.maxWidth);
+    setupFieldLimit('serialNumber', fieldLimits.serialNumber.maxWidth);
+
+    // Special handling for name and date combined
+    function checkNameDateLimit() {
+      const employeeName = document.getElementById("employeeName").value;
+      const reportDate = document.getElementById("reportDate").value;
+      const formattedDate = reportDate ? formatDate(reportDate) : '';
+      const combinedText = `${employeeName}, ${formattedDate}`;
+      return combinedText;
+    }
+
+    document.getElementById('employeeName').addEventListener('input', async (e) => {
+      const pdfDoc = await PDFLib.PDFDocument.create();
+      const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+      const combinedText = checkNameDateLimit();
+      const textWidth = font.widthOfTextAtSize(combinedText, 10);
+      
+      if (textWidth > fieldLimits.nameDate.maxWidth) {
+        e.target.value = e.target.value.slice(0, -1);
+      }
+    });
+
     textarea.addEventListener("input", async (e) => {
       const pdfDoc = await PDFLib.PDFDocument.create();
       const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
@@ -282,13 +356,13 @@
       firstPage.drawText(modelNumber, { x: 396.52, y: height - 141.87, size: 10, font });
       firstPage.drawText(serialNumber, { x: 396.52, y: height - 159.9, size: 10, font });
 
-      // Name and Date
+      // Name and Date (updated coordinates)
       const employeeName = document.getElementById("employeeName").value;
       const reportDate = document.getElementById("reportDate").value;
       const formattedDate = reportDate ? formatDate(reportDate) : '';
       const nameAndDate = `${employeeName}, ${formattedDate}`;
       
-      firstPage.drawText(nameAndDate, { x: 133.1, y: height - 380.5, size: 10, font });
+      firstPage.drawText(nameAndDate, { x: 260, y: height - 380.5, size: 10, font });
 
       // Condition Report (existing code)
       const startX = 63;
@@ -314,7 +388,7 @@
       const pngUrl = document.getElementById("empSig").toDataURL();
       const pngImageBytes = await fetch(pngUrl).then(res => res.arrayBuffer());
       const sigImage = await pdfDoc.embedPng(pngImageBytes);
-      firstPage.drawImage(sigImage, { x: 163.8, y: height - 370.6 - 40, width: 150, height: 40 });
+      firstPage.drawImage(sigImage, { x: 106, y: height - 350 - 40, width: 150, height: 40 });
 
       const pdfBytes = await pdfDoc.save();
       const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
