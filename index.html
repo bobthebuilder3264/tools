@@ -9,64 +9,117 @@
     body { font-family: "Segoe UI", sans-serif; background: #f4f6f8; padding: 20px; margin: 0; }
     .form { max-width: 700px; margin: auto; background: #fff; padding: 30px; border-radius: 12px; }
     h2 { text-align: center; margin-bottom: 24px; }
-    label { font-weight: 600; display: block; margin-top: 12px; }
-    textarea, input, select { width: 100%; margin-bottom: 5px; padding: 8px; font-size: 14px; border: 1px solid #ddd; border-radius: 6px; }
+    
+    .field-group { margin-bottom: 20px; }
+    .field-row { display: flex; gap: 15px; margin-bottom: 15px; }
+    .field { flex: 1; }
+    
+    label { display: block; margin-bottom: 5px; font-weight: bold; color: #333; }
+    input[type="text"], input[type="date"] { 
+      width: 100%; padding: 10px; font-size: 14px; border: 1px solid #ddd; 
+      border-radius: 6px; box-sizing: border-box; 
+    }
+    textarea { 
+      width: 100%; margin-bottom: 5px; padding: 12px; font-size: 16px; 
+      border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box;
+    }
+    
+    .radio-group { margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background: #f9f9f9; }
+    .radio-group label { display: inline-block; margin-right: 20px; font-weight: normal; }
+    .radio-group input[type="radio"] { margin-right: 8px; }
+    
     .limit-warning { font-size: 12px; color: red; margin-bottom: 15px; display: none; }
     .signature-pad { border: 1px solid #ddd; width: 100%; height: 120px; background: #fff; border-radius: 6px; touch-action: none; }
     .sig-btn { margin-top: 8px; padding: 6px 12px; background: #e74c3c; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
     .btn-primary { background: #0077cc; color: #fff; border: none; border-radius: 6px; padding: 12px 20px; font-size: 16px; cursor: pointer; margin-top: 20px; }
-    input[type="file"] { margin-top: 10px; display: block; }
+    input[type="file"] { margin-top: 15px; display: block; }
   </style>
 </head>
 <body>
   <div class="form">
     <h2>TOOL DISPOSITION FORM</h2>
-
-    <label for="statusSelect">Select one:</label>
-    <select id="statusSelect">
-      <option value="">-- Choose --</option>
-      <option value="lost">Lost</option>
-      <option value="scrap">Damaged/Scrap</option>
-      <option value="inactive">Inactivated</option>
-    </select>
-
-    <label>Equipment SNG Number:</label>
-    <input type="text" id="equipSNG">
-
-    <label>Manufacturer:</label>
-    <input type="text" id="manufacturer">
-
-    <label>Part Number:</label>
-    <input type="text" id="partNumber">
-
-    <label>Aircraft Serial Number S/N:</label>
-    <input type="text" id="aircraftSN">
-
-    <label>Part Description:</label>
-    <input type="text" id="partDescription">
-
-    <label>Model Number:</label>
-    <input type="text" id="modelNumber">
-
-    <label>Serial Number:</label>
-    <input type="text" id="serialNumber">
-
-    <label>Name:</label>
-    <input type="text" id="name">
-
-    <label>Date (dd/mm/yyyy):</label>
-    <input type="text" id="dateField" placeholder="e.g. 11/08/2025">
-
-    <label>Condition Report:</label>
-    <textarea id="conditionReport" placeholder="Enter condition report (max 6 lines)"></textarea>
-    <div id="limitWarning" class="limit-warning">Max 6 lines reached - no more text allowed</div>
-
-    <div>
-      <label>Employee Signature:</label>
-      <canvas id="empSig" class="signature-pad"></canvas>
-      <button class="sig-btn" onclick="clearCanvas('empSig')">Clear Signature</button>
+    
+    <!-- Status Selection -->
+    <div class="radio-group">
+      <label><strong>Select Status:</strong></label><br>
+      <label><input type="radio" name="status" value="lost"> Lost</label>
+      <label><input type="radio" name="status" value="damaged"> Damaged/Scrap</label>
+      <label><input type="radio" name="status" value="inactivated"> Inactivated</label>
     </div>
 
+    <!-- Equipment Details -->
+    <div class="field-group">
+      <div class="field-row">
+        <div class="field">
+          <label>Equipment SNG Number:</label>
+          <input type="text" id="equipmentSNG" />
+        </div>
+        <div class="field">
+          <label>Part Description:</label>
+          <input type="text" id="partDescription" />
+        </div>
+      </div>
+      
+      <div class="field-row">
+        <div class="field">
+          <label>Manufacturer:</label>
+          <input type="text" id="manufacturer" />
+        </div>
+        <div class="field">
+          <label>Model Number:</label>
+          <input type="text" id="modelNumber" />
+        </div>
+      </div>
+      
+      <div class="field-row">
+        <div class="field">
+          <label>Part Number:</label>
+          <input type="text" id="partNumber" />
+        </div>
+        <div class="field">
+          <label>Serial Number:</label>
+          <input type="text" id="serialNumber" />
+        </div>
+      </div>
+      
+      <div class="field-row">
+        <div class="field">
+          <label>Aircraft Serial Number S/N:</label>
+          <input type="text" id="aircraftSerial" />
+        </div>
+        <div class="field"></div>
+      </div>
+    </div>
+
+    <!-- Name and Date -->
+    <div class="field-group">
+      <div class="field-row">
+        <div class="field">
+          <label>Name:</label>
+          <input type="text" id="employeeName" />
+        </div>
+        <div class="field">
+          <label>Date:</label>
+          <input type="date" id="reportDate" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Condition Report -->
+    <div class="field-group">
+      <label>Condition Report:</label>
+      <textarea id="conditionReport" placeholder="Enter condition report (max 6 lines)"></textarea>
+      <div id="limitWarning" class="limit-warning">Max 6 lines reached - no more text allowed</div>
+    </div>
+
+    <!-- Signature -->
+    <div class="field-group">
+      <label>Employee Signature:</label>
+      <canvas id="empSig" class="signature-pad"></canvas>
+      <button class="sig-btn" onclick="clearCanvas('empSig')">Clear Employee Signature</button>
+    </div>
+
+    <!-- File Uploads -->
     <div id="photoInputsContainer">
       <label>Photos:</label>
       <input type="file" accept="image/*" class="photo-input" />
@@ -110,6 +163,9 @@
 
     setupSigPad(document.getElementById("empSig"));
 
+    // Set today's date as default
+    document.getElementById("reportDate").valueAsDate = new Date();
+
     const textarea = document.getElementById("conditionReport");
     const warning = document.getElementById("limitWarning");
 
@@ -127,6 +183,21 @@
       }
     });
 
+    textarea.addEventListener("keydown", async (e) => {
+      const allowedKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'Tab'];
+      if (allowedKeys.includes(e.key) || e.ctrlKey || e.metaKey) return;
+
+      const pdfDoc = await PDFLib.PDFDocument.create();
+      const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+      const testText = textarea.value + (e.key.length === 1 ? e.key : '');
+      const wrappedLines = wrapText(testText, font, 10, 488);
+      if (wrappedLines.length > 6) {
+        e.preventDefault();
+        warning.style.display = "block";
+      }
+    });
+
+    // Add new photo input on file select
     document.getElementById('photoInputsContainer').addEventListener('change', (e) => {
       if (e.target.classList.contains('photo-input') && e.target.files.length > 0) {
         e.target.disabled = true;
@@ -134,10 +205,11 @@
         newInput.type = 'file';
         newInput.accept = 'image/*';
         newInput.className = 'photo-input';
-        e.target.parentNode.appendChild(newInput);
+        document.getElementById('photoInputsContainer').appendChild(newInput);
       }
     });
 
+    // Add new video input on file select
     document.getElementById('videoInputsContainer').addEventListener('change', (e) => {
       if (e.target.classList.contains('video-input') && e.target.files.length > 0) {
         e.target.disabled = true;
@@ -145,15 +217,24 @@
         newInput.type = 'file';
         newInput.accept = 'video/*';
         newInput.className = 'video-input';
-        e.target.parentNode.appendChild(newInput);
+        document.getElementById('videoInputsContainer').appendChild(newInput);
       }
     });
 
     function renameFile(file, newName) {
       return new File([file], newName, { type: file.type });
     }
+    
     function getFileExtension(filename) {
       return filename.slice(filename.lastIndexOf('.'));
+    }
+
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+      const day = date.getDate().toString().padStart(2, '0');
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const year = date.getFullYear();
+      return `${day}/${month}/${year}`;
     }
 
     async function generatePDF() {
@@ -164,31 +245,52 @@
       const { height } = firstPage.getSize();
       const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
 
-      const drawTextAt = (txt, x, y) => {
-        firstPage.drawText(txt || "", { x, y: height - y, size: 10, font });
-      };
+      // Status checkboxes - add X to selected option
+      const selectedStatus = document.querySelector('input[name="status"]:checked');
+      if (selectedStatus) {
+        const statusCoords = {
+          'lost': { x: 96.88, y: height - 99.51 },
+          'damaged': { x: 241, y: height - 99.51 },
+          'inactivated': { x: 422, y: height - 99.51 }
+        };
+        const coord = statusCoords[selectedStatus.value];
+        firstPage.drawText('X', {
+          x: coord.x,
+          y: coord.y,
+          size: 12,
+          font
+        });
+      }
 
-      // Text fields
-      drawTextAt(document.getElementById("equipSNG").value, 144.6, 123.86);
-      drawTextAt(document.getElementById("manufacturer").value, 144.6, 141.87);
-      drawTextAt(document.getElementById("partNumber").value, 144.6, 159.9);
-      drawTextAt(document.getElementById("aircraftSN").value, 144.6, 177.87);
-      drawTextAt(document.getElementById("partDescription").value, 396.52, 123.86);
-      drawTextAt(document.getElementById("modelNumber").value, 396.52, 141.87);
-      drawTextAt(document.getElementById("serialNumber").value, 396.52, 159.9);
+      // Equipment fields (left column)
+      const equipmentSNG = document.getElementById("equipmentSNG").value;
+      const manufacturer = document.getElementById("manufacturer").value;
+      const partNumber = document.getElementById("partNumber").value;
+      const aircraftSerial = document.getElementById("aircraftSerial").value;
 
-      // Name + date combined
-      const name = document.getElementById("name").value;
-      const dateVal = document.getElementById("dateField").value;
-      drawTextAt(`${name}, ${dateVal}`, 133.1, 380.5);
+      firstPage.drawText(equipmentSNG, { x: 144.60, y: height - 123.86, size: 10, font });
+      firstPage.drawText(manufacturer, { x: 144.60, y: height - 141.87, size: 10, font });
+      firstPage.drawText(partNumber, { x: 144.6, y: height - 159.9, size: 10, font });
+      firstPage.drawText(aircraftSerial, { x: 144.6, y: height - 177.87, size: 10, font });
 
-      // Lost/Damaged/Scrap/Inactivated selection
-      const status = document.getElementById("statusSelect").value;
-      if (status === "lost") drawTextAt("X", 96.88, 99.51);
-      if (status === "scrap") drawTextAt("X", 241, 99.51);
-      if (status === "inactive") drawTextAt("X", 422, 99.51);
+      // Equipment fields (right column)
+      const partDescription = document.getElementById("partDescription").value;
+      const modelNumber = document.getElementById("modelNumber").value;
+      const serialNumber = document.getElementById("serialNumber").value;
 
-      // Condition Report
+      firstPage.drawText(partDescription, { x: 396.52, y: height - 123.86, size: 10, font });
+      firstPage.drawText(modelNumber, { x: 396.52, y: height - 141.87, size: 10, font });
+      firstPage.drawText(serialNumber, { x: 396.52, y: height - 159.9, size: 10, font });
+
+      // Name and Date
+      const employeeName = document.getElementById("employeeName").value;
+      const reportDate = document.getElementById("reportDate").value;
+      const formattedDate = reportDate ? formatDate(reportDate) : '';
+      const nameAndDate = `${employeeName}, ${formattedDate}`;
+      
+      firstPage.drawText(nameAndDate, { x: 133.1, y: height - 380.5, size: 10, font });
+
+      // Condition Report (existing code)
       const startX = 63;
       const startY_topOrigin = 237.53;
       const endY_topOrigin = 327.6;
@@ -198,27 +300,48 @@
       const lineSpacing = totalHeight / 5;
       const maxWidth = 488;
       const wrappedLines = wrapText(textarea.value, font, 10, maxWidth).slice(0, 6);
+
       wrappedLines.forEach((line, i) => {
-        firstPage.drawText(line, { x: startX, y: startY_pdf - (i * lineSpacing), size: 10, font });
+        firstPage.drawText(line, {
+          x: startX,
+          y: startY_pdf - (i * lineSpacing),
+          size: 10,
+          font
+        });
       });
 
-      // Signature
+      // Employee Signature (updated coordinates)
       const pngUrl = document.getElementById("empSig").toDataURL();
       const pngImageBytes = await fetch(pngUrl).then(res => res.arrayBuffer());
       const sigImage = await pdfDoc.embedPng(pngImageBytes);
       firstPage.drawImage(sigImage, { x: 163.8, y: height - 370.6 - 40, width: 150, height: 40 });
 
-      // Save & share
       const pdfBytes = await pdfDoc.save();
       const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
-      const renamedPdf = renameFile(new File([pdfBlob], 'ConditionReport.pdf', { type: 'application/pdf' }), 'ConditionReport.pdf');
+      const renamedPdf = renameFile(new File([pdfBlob], 'ToolDispositionForm.pdf', { type: 'application/pdf' }), 'ToolDispositionForm.pdf');
 
       const files = [renamedPdf];
-      document.querySelectorAll('.photo-input').forEach((input, i) => {
-        if (input.files.length > 0) files.push(renameFile(input.files[0], `photo_${i+1}${getFileExtension(input.files[0].name)}`));
+
+      // Collect all photos from all inputs
+      const photoInputs = document.querySelectorAll('.photo-input');
+      let photoIndex = 1;
+      photoInputs.forEach(input => {
+        if (input.files.length > 0) {
+          for (const file of input.files) {
+            files.push(renameFile(file, `photo_${photoIndex++}${getFileExtension(file.name)}`));
+          }
+        }
       });
-      document.querySelectorAll('.video-input').forEach((input, i) => {
-        if (input.files.length > 0) files.push(renameFile(input.files[0], `video_${i+1}${getFileExtension(input.files[0].name)}`));
+
+      // Collect all videos from all inputs
+      const videoInputs = document.querySelectorAll('.video-input');
+      let videoIndex = 1;
+      videoInputs.forEach(input => {
+        if (input.files.length > 0) {
+          for (const file of input.files) {
+            files.push(renameFile(file, `video_${videoIndex++}${getFileExtension(file.name)}`));
+          }
+        }
       });
 
       if (navigator.canShare && navigator.canShare({ files })) {
@@ -234,9 +357,11 @@
       const words = text.split(/\s+/);
       const lines = [];
       let currentLine = "";
+
       words.forEach(word => {
         const testLine = currentLine ? currentLine + " " + word : word;
         const width = font.widthOfTextAtSize(testLine, fontSize);
+
         if (width > maxWidth && currentLine) {
           lines.push(currentLine);
           currentLine = word;
@@ -244,6 +369,7 @@
           currentLine = testLine;
         }
       });
+
       if (currentLine) lines.push(currentLine);
       return lines;
     }
