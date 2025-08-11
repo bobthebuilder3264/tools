@@ -19,7 +19,7 @@
 </head>
 <body>
   <div class="form">
-    <h2>Condition Report</h2>
+    <h2>TOOL DISPOSITION FORM</h2>
     <textarea id="conditionReport" placeholder="Enter condition report (max 6 lines approx)"></textarea>
     <div id="limitWarning" class="limit-warning">Max 6 lines reached - no more text allowed</div>
     <div>
@@ -197,7 +197,7 @@
       });
 
       if (navigator.canShare && navigator.canShare({ files })) {
-        await navigator.share({ files, title: 'Condition Report', text: 'See attached form + media' });
+        await navigator.share({ files, title: 'TOOL DISPOSITION FORM', text: 'See attached form + media' });
       } else {
         alert("Sharing not supported on this device. PDF generated.");
         const url = URL.createObjectURL(pdfBlob);
