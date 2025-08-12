@@ -402,7 +402,7 @@
       photoInputs.forEach(input => {
         if (input.files.length > 0) {
           for (const file of input.files) {
-            files.push(renameFile(file, `photo_${photoIndex++}${getFileExtension(file.name)}`));
+            files.push(renameFile(file, `photo_${photoIndex++}${getFileExtension(file.name)}_partDescription`));
           }
         }
       });
