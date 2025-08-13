@@ -104,6 +104,15 @@
         </div>
       </div>
     </div>
+    <!-- Employee ID -->
+  <div class="field-group">
+    <div class="field-row">
+      <div class="field">
+        <label>Employee ID Number:</label>
+        <input type="text" id="employeeId" />
+      </div>
+    </div>
+  </div>
 
     <!-- Condition Report -->
     <div class="field-group">
@@ -360,9 +369,11 @@
       const employeeName = document.getElementById("employeeName").value;
       const reportDate = document.getElementById("reportDate").value;
       const formattedDate = reportDate ? formatDate(reportDate) : '';
-      const nameAndDate = `${employeeName}, ${formattedDate}`;
+      const employeeId = document.getElementById("employeeId").value.trim();
+      const nameDateId = `${employeeName}, ${employeeId}, ${formattedDate}`;
       
-      firstPage.drawText(nameAndDate, { x: 260, y: height - 380.5, size: 10, font });
+      firstPage.drawText(nameDateId, { x: 260, y: height - 380.5, size: 10, font });
+
 
       // Condition Report (existing code)
       const startX = 63;
@@ -396,27 +407,35 @@
 
       const files = [renamedPdf];
 
-      // Collect all photos from all inputs
-      const photoInputs = document.querySelectorAll('.photo-input');
-      let photoIndex = 1;
-      photoInputs.forEach(input => {
-        if (input.files.length > 0) {
-          for (const file of input.files) {
-            files.push(renameFile(file, `photo_${photoIndex++}${getFileExtension(file.name)}_partDescription`));
-          }
-        }
-      });
+      
+    const files = [renamedPdf];
 
-      // Collect all videos from all inputs
-      const videoInputs = document.querySelectorAll('.video-input');
-      let videoIndex = 1;
-      videoInputs.forEach(input => {
-        if (input.files.length > 0) {
-          for (const file of input.files) {
-            files.push(renameFile(file, `video_${videoIndex++}${getFileExtension(file.name)}`));
-          }
-        }
-      });
+  // Prepare safe part description
+    let partDescValue = document.getElementById("partDescription").value.trim().replace(/[^\w\s-]/g, "").replace(/\s+/g, "_");
+    if (partDescValue) partDescValue = "_" + partDescValue; // only prefix underscore if not empty
+
+  // Photos
+    const photoInputs = document.querySelectorAll('.photo-input');
+    let photoIndex = 1;
+    photoInputs.forEach(input => {
+      if (input.files.length > 0) {
+        for (const file of input.files) {
+          files.push(renameFile(file, `photo_${photoIndex++}${partDescValue}${getFileExtension(file.name)}`));
+      }
+    }
+  });
+
+  // Videos
+    const videoInputs = document.querySelectorAll('.video-input');
+    let videoIndex = 1;
+    videoInputs.forEach(input => {
+      if (input.files.length > 0) {
+        for (const file of input.files) {
+          files.push(renameFile(file, `video_${videoIndex++}${partDescValue}${getFileExtension(file.name)}`));
+      }
+    }
+  });
+
 
       if (navigator.canShare && navigator.canShare({ files })) {
         await navigator.share({ files, title: 'TOOL DISPOSITION FORM', text: 'See attached form + media' });
