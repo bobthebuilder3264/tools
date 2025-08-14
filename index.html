@@ -459,11 +459,14 @@
       firstPage.drawText(serialNumber, { x: 396.52, y: height - 159.9, size: 10, font });
 
       // Name and Date (updated coordinates)
-      const employeeName = document.getElementById("employeeName").value;
+      const employeeName = document.getElementById("employeeName").value.trim();
       const reportDate = document.getElementById("reportDate").value;
       const formattedDate = reportDate ? formatDate(reportDate) : '';
       const employeeId = document.getElementById("employeeId").value.trim();
-      const nameDateId = `${employeeName}, ${employeeId}, ${formattedDate}`;
+      
+      // Only include non-empty values with commas
+      const nameDateIdParts = [employeeName, employeeId, formattedDate].filter(part => part);
+      const nameDateId = nameDateIdParts.join(', ');
       
       firstPage.drawText(nameDateId, { x: 260, y: height - 380.5, size: 10, font });
 
