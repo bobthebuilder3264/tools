@@ -33,6 +33,11 @@
     .sig-btn { margin-top: 8px; padding: 6px 12px; background: #e74c3c; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
     .btn-primary { background: #0077cc; color: #fff; border: none; border-radius: 6px; padding: 12px 20px; font-size: 16px; cursor: pointer; margin-top: 20px; }
     input[type="file"] { margin-top: 15px; display: block; }
+    
+    .file-item { display: flex; align-items: center; gap: 10px; margin-top: 10px; padding: 8px; background: #f0f0f0; border-radius: 4px; }
+    .file-name { flex: 1; font-size: 14px; color: #333; }
+    .remove-btn { background: #e74c3c; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; }
+    .remove-btn:hover { background: #c0392b; }
   </style>
 </head>
 <body>
@@ -287,28 +292,109 @@
       }
     });
 
-    // Add new photo input on file select
-    document.getElementById('photoInputsContainer').addEventListener('change', (e) => {
-      if (e.target.classList.contains('photo-input') && e.target.files.length > 0) {
-        e.target.disabled = true;
-        const newInput = document.createElement('input');
-        newInput.type = 'file';
-        newInput.accept = 'image/*';
-        newInput.className = 'photo-input';
-        document.getElementById('photoInputsContainer').appendChild(newInput);
-      }
-    });
+    // Handle photo uploads with remove functionality
+    function handlePhotoUpload(input, file) {
+      // Create file display item
+      const fileItem = document.createElement('div');
+      fileItem.className = 'file-item';
+      
+      const fileName = document.createElement('span');
+      fileName.className = 'file-name';
+      fileName.textContent = file.name;
+      
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'remove-btn';
+      removeBtn.innerHTML = '×';
+      removeBtn.type = 'button';
+      removeBtn.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        fileItem.remove();
+        input.remove(); // Remove the hidden input too
+      };
+      
+      fileItem.appendChild(fileName);
+      fileItem.appendChild(removeBtn);
+      
+      // Insert the file item into the container
+      document.getElementById('photoInputsContainer').appendChild(fileItem);
+      
+      // Hide current input
+      input.style.display = 'none';
+      
+      // Add new input for more uploads
+      const newInput = document.createElement('input');
+      newInput.type = 'file';
+      newInput.accept = 'image/*';
+      newInput.className = 'photo-input';
+      newInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+          handlePhotoUpload(e.target, e.target.files[0]);
+        }
+      });
+      document.getElementById('photoInputsContainer').appendChild(newInput);
+    }
 
-    // Add new video input on file select
-    document.getElementById('videoInputsContainer').addEventListener('change', (e) => {
-      if (e.target.classList.contains('video-input') && e.target.files.length > 0) {
-        e.target.disabled = true;
-        const newInput = document.createElement('input');
-        newInput.type = 'file';
-        newInput.accept = 'video/*';
-        newInput.className = 'video-input';
-        document.getElementById('videoInputsContainer').appendChild(newInput);
-      }
+    // Handle video uploads with remove functionality  
+    function handleVideoUpload(input, file) {
+      // Create file display item
+      const fileItem = document.createElement('div');
+      fileItem.className = 'file-item';
+      
+      const fileName = document.createElement('span');
+      fileName.className = 'file-name';
+      fileName.textContent = file.name;
+      
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'remove-btn';
+      removeBtn.innerHTML = '×';
+      removeBtn.type = 'button';
+      removeBtn.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        fileItem.remove();
+        input.remove(); // Remove the hidden input too
+      };
+      
+      fileItem.appendChild(fileName);
+      fileItem.appendChild(removeBtn);
+      
+      // Insert the file item into the container
+      document.getElementById('videoInputsContainer').appendChild(fileItem);
+      
+      // Hide current input
+      input.style.display = 'none';
+      
+      // Add new input for more uploads
+      const newInput = document.createElement('input');
+      newInput.type = 'file';
+      newInput.accept = 'video/*';
+      newInput.className = 'video-input';
+      newInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+          handleVideoUpload(e.target, e.target.files[0]);
+        }
+      });
+      document.getElementById('videoInputsContainer').appendChild(newInput);
+    }
+
+    // Initialize file upload handlers
+    window.addEventListener('DOMContentLoaded', function() {
+      // Initial photo input handler
+      const initialPhotoInput = document.querySelector('.photo-input');
+      initialPhotoInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+          handlePhotoUpload(e.target, e.target.files[0]);
+        }
+      });
+
+      // Initial video input handler
+      const initialVideoInput = document.querySelector('.video-input');
+      initialVideoInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+          handleVideoUpload(e.target, e.target.files[0]);
+        }
+      });
     });
 
     function renameFile(file, newName) {
