@@ -104,15 +104,16 @@
         </div>
       </div>
     </div>
+    
     <!-- Employee ID -->
-  <div class="field-group">
-    <div class="field-row">
-      <div class="field">
-        <label>Employee ID Number:</label>
-        <input type="text" id="employeeId" />
+    <div class="field-group">
+      <div class="field-row">
+        <div class="field">
+          <label>Employee ID Number:</label>
+          <input type="text" id="employeeId" />
+        </div>
       </div>
     </div>
-  </div>
 
     <!-- Condition Report -->
     <div class="field-group">
@@ -170,10 +171,14 @@
       ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
 
-    const canvas = document.getElementById("empSig");
-    canvas.width = canvas.offsetWidth;
-    canvas.height = canvas.offsetHeight;
-    setupSigPad(canvas);
+    // Initialize canvas after DOM is loaded
+    window.addEventListener('DOMContentLoaded', function() {
+      const canvas = document.getElementById("empSig");
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+      setupSigPad(canvas);
+    });
+
     // Set today's date as default
     document.getElementById("reportDate").valueAsDate = new Date();
 
@@ -376,7 +381,6 @@
       
       firstPage.drawText(nameDateId, { x: 260, y: height - 380.5, size: 10, font });
 
-
       // Condition Report (existing code)
       const startX = 63;
       const startY_topOrigin = 237.53;
@@ -409,35 +413,31 @@
 
       const files = [renamedPdf];
 
-      
-    const files = [renamedPdf];
+      // Prepare safe part description
+      let partDescValue = document.getElementById("partDescription").value.trim().replace(/[^\w\s-]/g, "").replace(/\s+/g, "_");
+      if (partDescValue) partDescValue = "_" + partDescValue; // only prefix underscore if not empty
 
-  // Prepare safe part description
-    let partDescValue = document.getElementById("partDescription").value.trim().replace(/[^\w\s-]/g, "").replace(/\s+/g, "_");
-    if (partDescValue) partDescValue = "_" + partDescValue; // only prefix underscore if not empty
+      // Photos
+      const photoInputs = document.querySelectorAll('.photo-input');
+      let photoIndex = 1;
+      photoInputs.forEach(input => {
+        if (input.files.length > 0) {
+          for (const file of input.files) {
+            files.push(renameFile(file, `photo_${photoIndex++}${partDescValue}${getFileExtension(file.name)}`));
+          }
+        }
+      });
 
-  // Photos
-    const photoInputs = document.querySelectorAll('.photo-input');
-    let photoIndex = 1;
-    photoInputs.forEach(input => {
-      if (input.files.length > 0) {
-        for (const file of input.files) {
-          files.push(renameFile(file, `photo_${photoIndex++}${partDescValue}${getFileExtension(file.name)}`));
-      }
-    }
-  });
-
-  // Videos
-    const videoInputs = document.querySelectorAll('.video-input');
-    let videoIndex = 1;
-    videoInputs.forEach(input => {
-      if (input.files.length > 0) {
-        for (const file of input.files) {
-          files.push(renameFile(file, `video_${videoIndex++}${partDescValue}${getFileExtension(file.name)}`));
-      }
-    }
-  });
-
+      // Videos
+      const videoInputs = document.querySelectorAll('.video-input');
+      let videoIndex = 1;
+      videoInputs.forEach(input => {
+        if (input.files.length > 0) {
+          for (const file of input.files) {
+            files.push(renameFile(file, `video_${videoIndex++}${partDescValue}${getFileExtension(file.name)}`));
+          }
+        }
+      });
 
       if (navigator.canShare && navigator.canShare({ files })) {
         await navigator.share({ files, title: 'TOOL DISPOSITION FORM', text: 'See attached form + media' });
