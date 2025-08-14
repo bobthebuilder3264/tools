@@ -405,7 +405,7 @@
       const pngUrl = document.getElementById("empSig").toDataURL();
       const pngImageBytes = await fetch(pngUrl).then(res => res.arrayBuffer());
       const sigImage = await pdfDoc.embedPng(pngImageBytes);
-      firstPage.drawImage(sigImage, { x: 106, y: height - 327 - 40, width: 150, height: 40 });
+      firstPage.drawImage(sigImage, { x: 106, y: height - 328 - 40, width: 150, height: 40 });
 
       const pdfBytes = await pdfDoc.save();
       const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
